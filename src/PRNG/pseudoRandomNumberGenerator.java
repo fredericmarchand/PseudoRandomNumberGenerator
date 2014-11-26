@@ -22,31 +22,37 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class pseudoRandomNumberGenerator {
 	
-	private static final int keyLength = 256;
+	private static final int KEY_LENGTH = 256;
 	
-	private static Key key;
+	private byte[] key;
 	private BigInteger counter;
 	private Cipher AES;
 	private MessageDigest sha256;
 	
 	public pseudoRandomNumberGenerator() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-		byte[] k =   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		byte[] k =   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		byte[] ctr = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-		keyGenerator.init(128);
-		key = keyGenerator.generateKey();
+		
+		//Initialize Counter;
 		counter = new BigInteger(ctr);
-		//key = new SecretKeySpec(k, 0, k.length, "AES");
+		key = k;
+		Key tempKey = new SecretKeySpec(key, "AES");
+		
+		//Initialize SHA-256
 		sha256 = MessageDigest.getInstance("SHA-256");
+		
+		//Initialize AES
 		AES = Cipher.getInstance("AES");	
-		AES.init(Cipher.ENCRYPT_MODE, key);
+		AES.init(Cipher.ENCRYPT_MODE, tempKey);
 	}
 	
-	public void Reseed(int seed) throws UnsupportedEncodingException {
-		String text = key.getEncoded() + Integer.toString(seed);
-		sha256.update(text.getBytes("UTF-8")); // Change this to "UTF-16" if needed
+	public void Reseed(String seed) throws UnsupportedEncodingException, InvalidKeyException {
+		String text = new String(key) + seed;
+		sha256.update(text.getBytes());
 		byte[] digest = sha256.digest();
-		key = new SecretKeySpec(digest, 0, digest.length, "AES");
+		key = digest;
+		Key tempKey = new SecretKeySpec(key, "AES");
+		AES.init(Cipher.ENCRYPT_MODE, tempKey);
 		counter.add(new BigInteger("1"));
 	}
 	
@@ -55,7 +61,7 @@ public class pseudoRandomNumberGenerator {
 		String r = "";
 		for (int i = 1; i < numBlocks; ++i)
 		{
-			r = r + AES.doFinal(r.getBytes());
+			r = r + new String(AES.doFinal(counter.toByteArray()));
 			counter.add(new BigInteger("1"));
 		}
 		return r;
@@ -63,32 +69,15 @@ public class pseudoRandomNumberGenerator {
 	
 	public String GenerateData(int numBytes) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 		assert(numBytes >= 0 && numBytes <= Math.pow(2, 20));
-		System.out.println((int)Math.ceil(numBytes/16));
-		String r = GenerateBlocks((int)Math.ceil(numBytes/16));
-		//k = GenerateBlocks(2);
+		String r = GenerateBlocks((int)Math.ceil(numBytes/16));//.substring(0, numBytes-1);
+		System.out.println(r.length());
+		key = GenerateBlocks(2).getBytes();
 		return r;
 	}
 	
 	public static void main(String args[]) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
-		prng.Reseed(2);
-		System.out.println(prng.GenerateData(160));
-		
-		
-		
-		//KeyGenerator keygen = KeyGenerator.getInstance("AES");
-		//keygen.init(256);
-		
-	    //SecretKey aesKey = keygen.generateKey();
-		//Cipher AES = Cipher.getInstance("AES");
-		//AES.init(Cipher.ENCRYPT_MODE, aesKey);
-		//System.out.println(aesKey.getEncoded());
-
-		/*MessageDigest md = MessageDigest.getInstance("SHA-256");
-		String text = "This is some text";
-
-		md.update(text.getBytes("UTF-8")); // Change this to "UTF-16" if needed
-		byte[] digest = md.digest();
-		System.out.println(digest);*/
+		prng.Reseed("ASDKLJFHLASDHkjsdhflka");
+		System.out.println(prng.GenerateData(32));
 	}
 }
