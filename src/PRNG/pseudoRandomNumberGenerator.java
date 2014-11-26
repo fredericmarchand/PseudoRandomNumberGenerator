@@ -59,7 +59,7 @@ public class pseudoRandomNumberGenerator {
 	public String GenerateBlocks(int numBlocks) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 		assert(counter.equals(new BigInteger("0")) == false);
 		String r = "";
-		for (int i = 1; i < numBlocks; ++i)
+		for (int i = 0; i < numBlocks; ++i)
 		{
 			r = r + new String(AES.doFinal(counter.toByteArray()));
 			counter.add(new BigInteger("1"));
@@ -69,15 +69,33 @@ public class pseudoRandomNumberGenerator {
 	
 	public String GenerateData(int numBytes) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 		assert(numBytes >= 0 && numBytes <= Math.pow(2, 20));
-		String r = GenerateBlocks((int)Math.ceil(numBytes/16));//.substring(0, numBytes-1);
-		System.out.println(r.length());
+		String r = GenerateBlocks((int)Math.ceil((double)numBytes/16.0)).substring(0, numBytes);
 		key = GenerateBlocks(2).getBytes();
+		Key tempKey = new SecretKeySpec(key, "AES");
+		AES.init(Cipher.ENCRYPT_MODE, tempKey);
 		return r;
+	}
+	
+	public static int generate32BitInteger(String data) {
+		assert (data.length() == 4);
+		ByteBuffer wrapped = ByteBuffer.wrap(data.getBytes());
+		return wrapped.getInt();
+	}
+	
+	public static long generate64BitInteger(String data) {
+		assert (data.length() == 8);
+		ByteBuffer wrapped = ByteBuffer.wrap(data.getBytes());
+		return wrapped.getLong();
 	}
 	
 	public static void main(String args[]) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
-		prng.Reseed("ASDKLJFHLASDHkjsdhflka");
-		System.out.println(prng.GenerateData(32));
+		//prng.Reseed("ASDKLJFHLASDHkjsdhflkasdasdaa");
+		
+		String data = prng.GenerateData(4);
+		System.out.println(generate32BitInteger(data));
+		
+		data = prng.GenerateData(8);
+		System.out.println(generate64BitInteger(data));
 	}
 }
