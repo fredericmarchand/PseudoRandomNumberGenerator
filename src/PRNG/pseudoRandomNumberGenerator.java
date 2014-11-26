@@ -2,65 +2,87 @@ package PRNG;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.KeySpec;
+
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.SecretKeySpec;
 
 public class pseudoRandomNumberGenerator {
 	
-	private static BigInteger key;
+	private static final int keyLength = 256;
+	
+	private static Key key;
 	private BigInteger counter;
 	private Cipher AES;
 	private MessageDigest sha256;
 	
-	public pseudoRandomNumberGenerator() throws NoSuchAlgorithmException, NoSuchPaddingException {
-		byte[] k = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	public pseudoRandomNumberGenerator() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+		byte[] k =   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		byte[] ctr = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		key = new BigInteger(k);
+		KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+		keyGenerator.init(128);
+		key = keyGenerator.generateKey();
 		counter = new BigInteger(ctr);
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		Cipher AES = Cipher.getInstance("AES");
+		//key = new SecretKeySpec(k, 0, k.length, "AES");
+		sha256 = MessageDigest.getInstance("SHA-256");
+		AES = Cipher.getInstance("AES");	
+		AES.init(Cipher.ENCRYPT_MODE, key);
 	}
 	
 	public void Reseed(int seed) throws UnsupportedEncodingException {
-		String text = key.toString() + Integer.toString(seed);
+		String text = key.getEncoded() + Integer.toString(seed);
 		sha256.update(text.getBytes("UTF-8")); // Change this to "UTF-16" if needed
 		byte[] digest = sha256.digest();
-		key = new BigInteger(digest);
+		key = new SecretKeySpec(digest, 0, digest.length, "AES");
 		counter.add(new BigInteger("1"));
 	}
 	
-	public String GenerateBlocks(int numBlocks) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	public String GenerateBlocks(int numBlocks) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 		assert(counter.equals(new BigInteger("0")) == false);
-		Cipher AES = Cipher.getInstance("AES");
-		AES.init(Cipher.ENCRYPT_MODE, (Key) key);
 		String r = "";
 		for (int i = 1; i < numBlocks; ++i)
 		{
-			//numBlocks = numBlocks + AES.(key, "plaintext");
+			r = r + AES.doFinal(r.getBytes());
 			counter.add(new BigInteger("1"));
 		}
 		return r;
 	}
 	
-	public void GenerateData(int numBytes) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public String GenerateData(int numBytes) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 		assert(numBytes >= 0 && numBytes <= Math.pow(2, 20));
-		String r = GenerateBlocks((int)Math.ceil(numBytes/16)).substring(0, numBytes);
+		System.out.println((int)Math.ceil(numBytes/16));
+		String r = GenerateBlocks((int)Math.ceil(numBytes/16));
 		//k = GenerateBlocks(2);
+		return r;
 	}
 	
-	public static void main(String args[]) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException {
-		KeyGenerator keygen = KeyGenerator.getInstance("AES");
-		keygen.init(128);
-	    SecretKey aesKey = keygen.generateKey();
-		Cipher AES = Cipher.getInstance("AES");
-		AES.init(Cipher.ENCRYPT_MODE, aesKey);
-
+	public static void main(String args[]) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException {
+		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
+		prng.Reseed(2);
+		System.out.println(prng.GenerateData(160));
+		
+		
+		
+		//KeyGenerator keygen = KeyGenerator.getInstance("AES");
+		//keygen.init(256);
+		
+	    //SecretKey aesKey = keygen.generateKey();
+		//Cipher AES = Cipher.getInstance("AES");
+		//AES.init(Cipher.ENCRYPT_MODE, aesKey);
+		//System.out.println(aesKey.getEncoded());
 
 		/*MessageDigest md = MessageDigest.getInstance("SHA-256");
 		String text = "This is some text";
