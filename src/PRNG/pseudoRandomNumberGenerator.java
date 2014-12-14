@@ -71,27 +71,25 @@ public class pseudoRandomNumberGenerator {
 		return r;
 	}
 	
-	public static int generate32BitInteger() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
-		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
-		String data = prng.GenerateData(4);
+	public int generate32BitInteger() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+		String data = this.GenerateData(4);
 		assert (data.length() == 4);
 		ByteBuffer wrapped = ByteBuffer.wrap(data.getBytes());
 		return wrapped.getInt();
 	}
 	
-	public static long generate64BitInteger() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
-		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
-		String data = prng.GenerateData(8);
+	public long generate64BitInteger() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+		String data = this.GenerateData(8);
 		assert (data.length() == 8);
 		ByteBuffer wrapped = ByteBuffer.wrap(data.getBytes());
 		return wrapped.getLong();
 	}
 	
 	public static void main(String args[]) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException {
-		//pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
-		//prng.Reseed("ASDKLJFHLASDHkjsdhflkasdasdaa");
+		pseudoRandomNumberGenerator prng = new pseudoRandomNumberGenerator();
+		prng.Reseed("ASDKLJFHLASDHkjsdhflkasdasdaa");
 		
-		System.out.println(generate32BitInteger());
-		System.out.println(generate64BitInteger());
+		System.out.println(prng.generate32BitInteger());
+		System.out.println(prng.generate64BitInteger());
 	}
 }
